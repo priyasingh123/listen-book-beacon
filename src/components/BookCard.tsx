@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Book, Play, Clock, Pause } from "lucide-react";
 import {
   Card,
@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 
 export interface BookItem {
   id: string;
@@ -27,6 +28,8 @@ interface BookCardProps {
 
 export const BookCard: React.FC<BookCardProps> = ({ book }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const togglePlay = () => {
@@ -38,6 +41,44 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
       }
       setIsPlaying(!isPlaying);
     }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleSliderChange = (value: number[]) => {
+    const newTime = value[0];
+    setCurrentTime(newTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+    }
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.addEventListener("timeupdate", handleTimeUpdate);
+      audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+      return () => {
+        audio.removeEventListener("timeupdate", handleTimeUpdate);
+        audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      };
+    }
+  }, []);
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
   const getStatusColor = (status: string) => {
@@ -105,15 +146,12 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
           </Badge>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <Badge
             className={`text-xs ${getStatusColor(book.status)} text-white`}
           >
             {getStatusText(book.status)}
           </Badge>
-          {/* <button className="p-2 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors">
-            <Play className="w-4 h-4 text-purple-600" size={16} />
-          </button> */}
           <div className="flex items-center gap-2">
             <button
               onClick={togglePlay}
@@ -121,8 +159,30 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
             >
               {isPlaying ? <Pause size={16} /> : <Play size={16} />}
             </button>
-            <audio ref={audioRef} src={`/audio/${book.audio}`} />
+            <audio
+              ref={audioRef}
+              src={`/audio/${book.audio}`}
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
+            />
           </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="flex items-center gap-2 w-full">
+          <span className="text-xs text-gray-500 w-8">
+            {formatTime(currentTime)}
+          </span>
+          <Slider
+            className="flex-1"
+            value={[currentTime]}
+            max={duration}
+            step={1}
+            onValueChange={handleSliderChange}
+          />
+          <span className="text-xs text-gray-500 w-8">
+            {formatTime(duration)}
+          </span>
         </div>
       </CardContent>
     </Card>

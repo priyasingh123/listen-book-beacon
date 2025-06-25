@@ -12,7 +12,7 @@ const Index = () => {
       id: "1",
       title: "Alchemist",
       author: "Paul Coelho",
-      duration: "5h 35m",
+      duration: "52m",
       category: "Self-Help",
       status: "to-listen",
       description:
