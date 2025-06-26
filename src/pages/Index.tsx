@@ -18,6 +18,7 @@ const Index = () => {
       description:
         "Follow your dreams, and the universe will conspire to help you.",
       audio: "alchemist.mp3",
+      coverUrl: "/images/alchemist.jpeg",
     },
     {
       id: "2",
